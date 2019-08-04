@@ -5,8 +5,8 @@
 #include <cstdlib>
 #include <string>
 #include <thread>
-void runUdpServer();
 void runUdpClient();
+int mainGameLoop();
 using namespace sf;
 
 const int W = 1600;
@@ -47,6 +47,12 @@ struct player
 
 int main()
 {
+	mainGameLoop();
+	return 0;
+}
+
+
+int mainGameLoop() {
 	srand(time(0));
 
 	RenderWindow window(VideoMode(W, H), "The Tron Game!");
@@ -84,7 +90,6 @@ int main()
 	text2.setOrigin(-215, -150);
 
 	std::thread cliente(runUdpClient);     // spawn new thread that calls foo()
-	//std::thread server(runUdpServer);     // spawn new thread that calls foo()
 
 	while (window.isOpen())
 	{
@@ -191,46 +196,9 @@ int main()
 		window.draw(text);
 		window.display();
 	}
+
 	return 0;
 }
-
-
-
-////////////////////////////////////////////////////////////
-/// Launch a server, wait for a message, send an answer.   /
-////////////////////////////////////////////////////////////
-void runUdpServer()
-{
-	unsigned short port = 50001;
-	// Create a socket to receive a message from anyone
-	sf::UdpSocket socket;
-
-	// Listen to messages on the specified port
-	if (socket.bind(port) != sf::Socket::Done)
-		return;
-	std::cout << "Server is listening to port " << port << ", waiting for a message... " << std::endl;
-
-	// Wait for a message
-	char in[128];
-	std::size_t received;
-	sf::IpAddress sender;
-	unsigned short senderPort;
-	while (true)
-	{
-		if (socket.receive(in, sizeof(in), received, sender, senderPort) != sf::Socket::Done)
-			return;
-		std::cout << "Message received from client " << sender << ": \"" << in << "\"" << std::endl;
-	}
-
-
-
-	// Send an answer to the client
-	/*const char out[] = "Hi, I'm the server";
-	if (socket.send(out, sizeof(out), sender, senderPort) != sf::Socket::Done)
-		return;
-	std::cout << "Message sent to the client: \"" << out << "\"" << std::endl;*/
-}
-
 
 ////////////////////////////////////////////////////////////
 /// Send a message to the server, wait for the answer      /
@@ -242,19 +210,27 @@ void runUdpClient()
 	// server address
 	char out[] = "1";
 	sf::IpAddress server;
+	sf:Uint16 dir = dirServer;
+	sf::Packet packet;
 	server = sf::IpAddress::LocalHost;
 	// Create a socket for communicating with the server
 	sf::UdpSocket socket;
 	// Send a message to the server
-	//std::string s = std::to_string(dirServer);
 	while (true)
 	{
-		out[0] = dirServer + 48;
+		packet.clear();
+		dir = dirServer;
+		packet << dir;
+		std::cout << "Message sent to the server: \"" << dir << "\"" << std::endl;
 
-		if (socket.send(out, sizeof(out), server, port) != sf::Socket::Done)
-			std::cout << "Socket thingy" << std::endl;
-		std::cout << "Message sent to the server: \"" << out << "\"" << std::endl;
+		socket.send(packet, server, port);
 	}
 
 
+}
+
+
+void kill_child(int sig)
+{
+	kill(child_pid, SIGKILL);
 }
