@@ -4,3 +4,7 @@ TrOnline/TrOnline/x64
 TrOnlineServer/.vs
 TrOnlineServer/x64
 TrOnlineServer/TrOnlineServer/x64
+
+TrOnlineLinux/TrOnlineLinux/bin/Debug/
+
+TrOnlineLinux/TrOnlineLinux/obj/Debug/
