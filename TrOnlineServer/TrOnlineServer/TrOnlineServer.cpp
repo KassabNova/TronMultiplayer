@@ -13,8 +13,11 @@ using namespace sf;
 
 int main()
 {
-    std::cout << "Hello World!\n";
-	runUdpServer();
+	while (true)
+	{
+		sleep(sf::seconds(2));
+		runUdpServer();
+	}
 }
 
 
@@ -31,20 +34,26 @@ void runUdpServer()
 	std::cout << "Server is listening to port " << port << ", waiting for a message... " << std::endl;
 
 	// Wait for a message
-	char in[128];
 	std::size_t received;
 	sf::IpAddress sender;
 	sf::IpAddress player1 = sf::IpAddress::None;
 	sf::IpAddress player2 = sf::IpAddress::None;
 	sf::Packet packet;
-	sf::Uint16 dirP1 = -1;
+	sf::Uint16 dirP1;
 	sf::Uint16 dirP2;
+	sf::Uint16 start = -1;
+	sf::Uint16 finish = 0;
+
+	bool gameover = false;
+	bool playersReady = false;
 	unsigned short senderPort;
-	while (true)
+
+	while (!playersReady)
 	{
-		if (socket.receive(packet, sender, senderPort) != sf::Socket::Done)
-			return;
-		if (player1 != sender  && player2 == sf::IpAddress::None)
+		
+		socket.receive(packet, sender, senderPort);
+
+		if (player1 != sender && player2 == sf::IpAddress::None)
 		{
 			player2 = sender;
 		}
@@ -52,48 +61,69 @@ void runUdpServer()
 		{
 			player1 = sender;
 		}
-		
+
 
 		if (player1 != IpAddress::None && player2 != IpAddress::None)
 		{
-			if (sender == player1)
-			{
-				if (packet >> dirP1)
-				{
-					std::cout << "PLAYER UNO: " << sender << ": \"" << dirP1 << "\"" << std::endl;
-				}
-				else
-				{
-					/*const char out[] = "Hi, I'm the server";
-					if (socket.send(out, sizeof(out), player2, senderPort) != sf::Socket::Done)
-						return;*/
-				}
-
-			}
-			if (sender == player2)
-			{
-				if (packet >> dirP2)
-				{
-				//	std::cout << "Message received from client " << sender << ": \"" << dirP2 << "\"" << std::endl;
-				}
-				else
-				{
-					/*const char out[] = "Hi, I'm the server";
-					if (socket.send(out, sizeof(out), player2, senderPort) != sf::Socket::Done)
-						return;*/
-				}
-
-			}
+			packet.clear();
+			packet << start;
+			socket.send(packet, player1, senderPort);
+			socket.send(packet, player2, senderPort);
+			playersReady = true;
 		}
-		packet.clear();
-		
+
 	}
 
 
+	while (!gameover)
+	{
 
-	// Send an answer to the client
-	/*const char out[] = "Hi, I'm the server";
-	if (socket.send(out, sizeof(out), sender, senderPort) != sf::Socket::Done)
-		return;
-	std::cout << "Message sent to the client: \"" << out << "\"" << std::endl;*/
+
+
+		socket.receive(packet, sender, senderPort);
+		if (packet >> finish)
+		{
+			std::cout << "MENSAJE: " << sender << ": \"" << finish << "\"" << std::endl;
+			if (finish == -1)
+			{
+				gameover = true;
+				break;
+			}
+			
+		}
+		if (sender == player1)
+		{
+			if (packet >> dirP1)
+			{
+				std::cout << "PLAYER UNO: " << sender << ": \"" << dirP1 << "\"" << std::endl;
+			}
+			else
+			{
+				// Send an answer to the client
+				socket.send(packet, player2, senderPort);
+
+			}
+
+		}
+		if (sender == player2)
+		{
+			if (packet >> dirP2)
+			{
+				std::cout << "PLAYER DOS " << sender << ": \"" << dirP2 << "\"" << std::endl;
+			}
+			else
+			{
+				// Send an answer to the client
+				socket.send(packet, player2, senderPort);
+			}
+
+		}
+
+		packet.clear();
+
+	}
+
+	
+
+	//std::cout << "Message sent to PLAYER ONE: \"" << out << "\"" << std::endl;
 }
