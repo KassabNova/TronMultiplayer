@@ -305,10 +305,12 @@ int connectionReady()
 	sf::UdpSocket socket;
 	// Send a message to the server
     packet << readyPlayer1;
-    std::cout << "I am ready to play!: \"" << "\"" << std::endl;
+    std::cout << "I am ready to play!" << std::endl;
 
     socket.send(packet, server, port);
     packet.clear();
+    std::cout << "Waiting for another player" << std::endl;
+
     socket.receive(packet, server,port);
 
     if(packet >> gameStart)
